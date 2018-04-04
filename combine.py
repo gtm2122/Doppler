@@ -15,7 +15,7 @@ zoom = '1.0'
 import os
 
 import scipy.io
-
+import scipy.misc
 #for i in os.listdir(dop_dir):
 
 #print(a[0])
@@ -26,137 +26,171 @@ import re
 t = 'Imgtype'
 c = 'color'
 
+import os
+from PIL import Image
+import matplotlib.patches as patches
+
+gt_path = '/data/gabriel/ground_truths/'
+
 bbox_types = ['W','E','V','C','T','S']
 
 c_to_num = {'b':0,'r':1,'g':2,'y':3,'m':4}
 
-# f = open('./error_names.txt','w')
-# f.close()
-
+f = open('./error_names.txt','w')
+f.close()
+ccc = 0
 for names in a[0]:
-	print(names)
+	#print(names)
 	for i in os.listdir(dop_dir+'/'+names+'/'):
 		#print(dop_dir+'/'+names)
 		#print(i[-3:])
 		#print('here')
-		if zoom in i[-3:]:
-			res_dir = dop_dir+'/'+names+'/'+i+'/Result.mat'
-			gt1_mask = scipy.io.loadmat(res_dir)['RegProps_img']['GT1Mask'][0,0][:5]
-			#print(gt1_mask)
-			#exit()
-			#### STRUCTURE - gt1_mask[x,0][-1] will give bounding box corner and length breadth
 
-			gt2_mask = scipy.io.loadmat(res_dir)['RegProps_img'][:,:]['GT2Mask'][0,0][:5]
-			
-			gt1_region = scipy.io.loadmat(res_dir)['RegProps_img'][:,:]['GT1'][0,0][:5] 
-			gt2_region = scipy.io.loadmat(res_dir)['RegProps_img'][:,:]['GT2'][0,0][:5]
 
-			#print(gt1_mask)
-			#exit()
-			
+		try:
+			ccc+=1
+			if zoom in i[-3:]:
+				#print(gt_path+'/'+names+'/'+i)
+				#exit()
+				#gt_zoom_path = gt_path+'/'+names+'/'+i
 
-			img_type_coords = {1:gt1_region,2:gt2_region,3:gt1_mask,4:gt2_mask}
+				#print(i)		
 
-			for item in bbox_types:
-				#print()
-				color_entry = list(a[a[0]==names][item+c].items())[0][1]
-				#print(color_entry)
-				print(item)
-				#color_entry = [j.lower() for j in list(color_entry) if j.isalpha() ]
-				#print(color_entry)
-				#print(list(a[a[0]==names][item+c].items())[0][1])
-				if(not pd.isnull(color_entry )):#and not pd.isnull(a[a[0]==names][item+t][0])):
+				res_dir = dop_dir+'/'+names+'/'+i+'/Result.mat'
+				gt1_mask = scipy.io.loadmat(res_dir)['RegProps_img']['GT1Mask'][0,0][:5]
+				#print(gt1_mask)
+				#exit()
+				#### STRUCTURE - gt1_mask[x,0][-1] will give bounding box corner and length breadth
+
+				gt2_mask = scipy.io.loadmat(res_dir)['RegProps_img'][:,:]['GT2Mask'][0,0][:5]
+				
+				gt1_region = scipy.io.loadmat(res_dir)['RegProps_img'][:,:]['GT1'][0,0][:5] 
+				gt2_region = scipy.io.loadmat(res_dir)['RegProps_img'][:,:]['GT2'][0,0][:5]
+
+				#print(gt1_mask)
+				#exit()
+				
+
+				img_type_coords = {1:gt1_region,2:gt2_region,3:gt1_mask,4:gt2_mask}
+				
+				mask = np.zeros_like(plt.imread(orig_dir+'/'+names+'.jpeg'))
+				
+				all_coords_types  = []
+
+				for item in bbox_types:
+					#print()
+
+					if(not os.path.isdir(gt_path+'/'+item)):
+						os.makedirs(gt_path+'/'+item)
+
+					gt_zoom_path=gt_path+'/'+item
+
+					color_entry = list(a[a[0]==names][item+c].items())[0][1]
 					#print(color_entry)
-					color_entry = [i.lower()  for i in color_entry if i.isalpha()]
-					print(color_entry)
-					
+					#print(item)
+					#color_entry = [j.lower() for j in list(color_entry) if j.isalpha() ]
+					#print(color_entry)
+					#print(list(a[a[0]==names][item+c].items())[0][1])
+					print(names)
+					if(not pd.isnull(color_entry ) and not isinstance(color_entry,int) and [j.lower()  for j in color_entry if j.isalpha()][0] in c_to_num):#and not pd.isnull(a[a[0]==names][item+t][0])):
+						#print(color_entry)
+						color_entry = [j.lower()  for j in color_entry if j.isalpha()]
+						#print(color_entry)
+						
 
-					type_name = list(a[a[0]==names][item+t].items())[0][1]
+						type_name = list(a[a[0]==names][item+t].items())[0][1]
+						
+
+
+						gt_type_path = gt_zoom_path+'/'+names+'_'+i+'.png'
+
 						
 					#print(color_name)
-					
-					coords_all = []
-					for cc in color_entry:	
-						#continue
-						c_idx = c_to_num[cc]
-						coords = img_type_coords[type_name][c_idx,0][-1][0]
-						#print(coords)
-						### THE ORDERING OF COOORDS IS left top - right top - right bottom - left bottom
-					
-						coords_all.append([ [coords[1],coords[0]],[coords[1],coords[0]+coords[2]],[coords[1]+coords[3],coords[0]+coords[2]],[coords[1]+coords[3],coords[0]] ])
-
-
-						#print(coords)
-												
-						#color_name = cc
 						
-							# p1 = [coords[0],coords[1]]
-							# p2 = [coords[0]+coords[2],coords[1]]
-							# p3 = [coords[0]+coords[2],coords[1]+coords[3]]
-							# p4 = [coords[0],coords[1]+coords[3]]
+						coords_all = []
+						for cc in color_entry:	
+							#continue
+							c_idx = c_to_num[cc]
+							coords = img_type_coords[type_name][c_idx,0][-1][0]
+							#print(coords)
+							### THE ORDERING OF COOORDS IS left top - right top - right bottom - left bottom
+						
+							coords_all.append([ [coords[1],coords[0]],[coords[1],coords[0]+coords[2]],[coords[1]+coords[3],coords[0]+coords[2]],[coords[1]+coords[3],coords[0]] ])
 
-					coords_all = np.array(coords_all)
-					#print(coords_all)
-					print(type_name)
-					if(coords_all.shape[0]>1):
-						#print('min')
+
+							#print(coords)
+													
+							#color_name = cc
+							
+								# p1 = [coords[0],coords[1]]
+								# p2 = [coords[0]+coords[2],coords[1]]
+								# p3 = [coords[0]+coords[2],coords[1]+coords[3]]
+								# p4 = [coords[0],coords[1]+coords[3]]
+
+						coords_all = np.array(coords_all)
 						#print(coords_all)
-						#print('mix')
-						min_top_left = min(coords_all,key=lambda x:x[0,0])[0]
-						max_top_right = [min_top_left[0],max(coords_all,key=lambda x:x[1,1])[1,1]]
-						max_bot_right = [max(coords_all,key=lambda x:x[2,0])[2][0],max(coords_all,key=lambda x:x[1,1])[1,1]]
+						#print(type_name)
+						if(coords_all.shape[0]>1):
 
-						b_box_coord = [min_top_left,max_top_right,max_bot_right,[max_bot_right[0],min_top_left[1]]]
+							min_top_left = [min(coords_all,key=lambda x:x[0,0])[0,0],min(coords_all,key=lambda x:x[0,0])[0,1]]
+							max_top_right = [min_top_left[0],max(coords_all,key=lambda x:x[1,1])[1,1]]
+							max_bot_right = [max(coords_all,key=lambda x:x[2,0])[2][0],max(coords_all,key=lambda x:x[1,1])[1,1]]
 
+							b_box_coord = [min_top_left,max_top_right,max_bot_right,[max_bot_right[0],min_top_left[1]]]
+							b_box_coord= np.array(b_box_coord,dtype=np.uint16)
+
+						else:
+							b_box_coord= np.array(coords_all,dtype=np.uint16).squeeze()
+
+						### Obtained bounding box, now make segmentation mask using orig_dir
 						#print(b_box_coord)
-						#print('here')
-						#exit()
-						#min_bot_r = -np.inf
+						orig_img = orig_dir+'/'+names+'.jpeg'
+						mask_type = np.zeros_like(mask)
+						#print(b_box_coord)
+						mask_type[int(b_box_coord[0,0]):int(b_box_coord[2,0]),int(b_box_coord[0,1]):int(b_box_coord[1,1])] = 255
 
-						#max_top_
-						# print(names)
-						# print('b_box_coord = ')
+						scipy.misc.imsave(gt_type_path,mask_type)
 
-						# print(b_box_coord)
+						np.savetxt(gt_zoom_path+'/'+names+'_'+i+'.npy',b_box_coord)
+
+						all_coords_types.append(b_box_coord)
+
 						
-					else:
+							#print(all_coords_types)
+						
+						#print(orig_img)
 
-						b_box_coord = coords_all.squeeze()
+				if ( ccc > 500 and len(all_coords_types) ==0):
+					print(len(all_coords_types))
+					print(b_box_coord)
+				all_coords_types=[]
+				#print(all_coords_types)
+				#count = 66
+				# fig,ax = plt.subplots(1)
+				# im = np.array(Image.open(orig_dir+'/'+names+'.jpeg'),dtype=np.uint8)
+				# ax.imshow(im)
 
-					### Obtained bounding box, now make segmentation mask using orig_dir
+				# for coord_type in all_coords_types:
+				# 	corner = (coord_type[0,1],coord_type[0,0])
+				# 	b = float(coord_type[3,0])-float(coord_type[0,0])
+				# 	l = float(coord_type[2,1])-float(coord_type[3,1])
+				# 	#print(l,b)
 
-					orig_img = orig_dir+'/'+names+'.jpeg'
-					print(orig_img)
-
-
-					# print(names)
-					# print('b_box_coord = ')
-
-					# print(b_box_coord)
 					
-					#print(coords_all)
-					#exit()
+					
+				# 	rect = patches.Rectangle(corner,l,b,linewidth=2,edgecolor='r',facecolor='none')
+				# 	#count+=1
+				# 	ax.add_patch(rect)
+				# #plt.plot()
+				# #plt.show()
 
-					#print(coords_all.shape)
+				# plt.savefig(gt_zoom_path+'/combined.png')
+				# #fig.close()
+				# plt.close()
 
-					# except:
-
-					# 	with open('./error_names.txt','a') as f:
-					# 		f.write(names+'\n')
-
-					# 	continue
-
-						#print(coords)
-						#break
-					# else:
-
-					# 	print(re.split(a[a[0]==names][item+c],'[+]'))
-
-						#break
-
-					#print(item+c,pd.isnull(a[a[0]==names][item+c][0])) ### color
-					#print(item+t,pd.isnull(a[a[0]==names][item+t][0])) ### type
-				#print(a[a[0]==names][item+c][0])
+		except IndexError:
+			with open('./error_names.txt','a') as f:
+				f.write(names+'\n')
 
 			# print(a[a[0]==names]['W'+t][0])
 			
@@ -173,7 +207,7 @@ for names in a[0]:
 	#break
 			#print(res_dir)
 
-f.close()
+#f.close()
 
 
 # b = np.array(a)
