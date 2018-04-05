@@ -39,14 +39,17 @@ c_to_num = {'b':0,'r':1,'g':2,'y':3,'m':4}
 f = open('./error_names.txt','w')
 f.close()
 ccc = 0
+all_names = []
+names_used = {x:[] for x in bbox_types}
 for names in a[0]:
 	#print(names)
 	for i in os.listdir(dop_dir+'/'+names+'/'):
 		#print(dop_dir+'/'+names)
-		#print(i[-3:])
-		#print('here')
 
+				#print(i[-3:])
+		#print('here');l,
 
+		all_names.append(names)
 		try:
 			ccc+=1
 			if zoom in i[-3:]:
@@ -91,7 +94,7 @@ for names in a[0]:
 					#color_entry = [j.lower() for j in list(color_entry) if j.isalpha() ]
 					#print(color_entry)
 					#print(list(a[a[0]==names][item+c].items())[0][1])
-					print(names)
+					#print(names)
 					if(not pd.isnull(color_entry ) and not isinstance(color_entry,int) and [j.lower()  for j in color_entry if j.isalpha()][0] in c_to_num):#and not pd.isnull(a[a[0]==names][item+t][0])):
 						#print(color_entry)
 						color_entry = [j.lower()  for j in color_entry if j.isalpha()]
@@ -130,14 +133,25 @@ for names in a[0]:
 						coords_all = np.array(coords_all)
 						#print(coords_all)
 						#print(type_name)
+						
 						if(coords_all.shape[0]>1):
+							#print(color_entry)
+							#print(coords_all.shape)
 
-							min_top_left = [min(coords_all,key=lambda x:x[0,0])[0,0],min(coords_all,key=lambda x:x[0,0])[0,1]]
-							max_top_right = [min_top_left[0],max(coords_all,key=lambda x:x[1,1])[1,1]]
-							max_bot_right = [max(coords_all,key=lambda x:x[2,0])[2][0],max(coords_all,key=lambda x:x[1,1])[1,1]]
+							coords_all2 = coords_all.reshape(coords_all.shape[0]*coords_all.shape[1],-1)
 
-							b_box_coord = [min_top_left,max_top_right,max_bot_right,[max_bot_right[0],min_top_left[1]]]
+							row_coords_min = min(coords_all2[:,0])
+							col_coords_min = min(coords_all2[:,1])
+
+							row_coords_max = max(coords_all2[:,0])
+							col_coords_max = max(coords_all2[:,1])
+
+							b_box_coord = [[row_coords_min,col_coords_min],[row_coords_min,col_coords_max],[row_coords_max,col_coords_max],[row_coords_max,col_coords_min]]
+
+							#b_box_coord = [min_top_left,max_top_right,max_bot_right,[max_bot_right[0],min_top_left[1]]]
 							b_box_coord= np.array(b_box_coord,dtype=np.uint16)
+
+							#print(b_box_coord)
 
 						else:
 							b_box_coord= np.array(coords_all,dtype=np.uint16).squeeze()
@@ -149,21 +163,21 @@ for names in a[0]:
 						#print(b_box_coord)
 						mask_type[int(b_box_coord[0,0]):int(b_box_coord[2,0]),int(b_box_coord[0,1]):int(b_box_coord[1,1])] = 255
 
-						scipy.misc.imsave(gt_type_path,mask_type)
+						# scipy.misc.imsave(gt_type_path,mask_type)
 
-						np.savetxt(gt_zoom_path+'/'+names+'_'+i+'.npy',b_box_coord)
+						# np.savetxt(gt_zoom_path+'/'+names+'_'+i+'.npy',b_box_coord)
 
 						all_coords_types.append(b_box_coord)
 
-						
-							#print(all_coords_types)
+						names_used[item].append(names)
+						#print(all_coords_types)
 						
 						#print(orig_img)
 
-				if ( ccc > 500 and len(all_coords_types) ==0):
-					print(len(all_coords_types))
-					print(b_box_coord)
-				all_coords_types=[]
+				# if ( ccc > 500 and len(all_coords_types) ==0):
+				# 	print(len(all_coords_types))
+				# 	print(b_box_coord)
+				#all_coords_types=[]
 				#print(all_coords_types)
 				#count = 66
 				# fig,ax = plt.subplots(1)
@@ -174,7 +188,7 @@ for names in a[0]:
 				# 	corner = (coord_type[0,1],coord_type[0,0])
 				# 	b = float(coord_type[3,0])-float(coord_type[0,0])
 				# 	l = float(coord_type[2,1])-float(coord_type[3,1])
-				# 	#print(l,b)
+				# 	print(l,b)
 
 					
 					
@@ -184,7 +198,7 @@ for names in a[0]:
 				# #plt.plot()
 				# #plt.show()
 
-				# plt.savefig(gt_zoom_path+'/combined.png')
+				# plt.savefig(gt_path+'/combined/'+names+'_'+i+'.png')
 				# #fig.close()
 				# plt.close()
 
@@ -208,6 +222,23 @@ for names in a[0]:
 			#print(res_dir)
 
 #f.close()
+
+import pickle
+
+pickle.dump(names_used,open('./used_names_types.pkl','wb'))
+
+pickle.dump(all_names,open('./all_names.pkl','wb'))
+
+not_used = {x:[] for x in names_used}
+
+for i in all_names:
+	for j in names_used:
+		if i not in names_used[j] and i not in not_used[j]:
+			not_used[j].append(i)
+
+
+
+pickle.dump(not_used,open('./not_used_types.pkl','wb'))
 
 
 # b = np.array(a)
