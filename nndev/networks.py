@@ -6,34 +6,53 @@ import matplotlib.pyplot as plt
 import os
 
 class dop_bbox(nn.Module):
-	def __init__(self,fe_obj,mlp_l,mlp_hd):
+	def __init__(self,fe_obj,mlp_l,mlp_hd,dr):
 		super(dop_bbox,self).__init__()
 
 		self.fe = nn.Sequential()
 		count=0
-		for i in fe_obj.children():
-			if not isinstance(i,nn.Linear):
-				self.fe.add_module('fe_'+str(count),i)
-			else:
+		for j,i in fe_obj.named_children():
+			
+			#print(i)
+			if isinstance(i,nn.Linear):
+				
 				self.embed_sz = i.in_features
 				break
+			self.fe.add_module('fe_'+str(count),i)
+			count+=1
 		self.classifier = nn.Sequential()
-
+		#self.avgpool = nn.AvgPool2d(7,stride=1)
 		if(mlp_l==1):
 			self.classifier.add_module('dense_0',nn.Linear(self.embed_sz,4))
+			#self.classifier.add_module('dense_0_act',nn.ReLU())
 		else:
 			self.classifier.add_module('dense_0',nn.Linear(self.embed_sz,mlp_hd))
-
+			#self.classifier.add_module('dense_0_act',nn.ReLU())
+			
 			for i in range(1,mlp_l-1):
 				#if(i==mlp_l):
 				self.classifier.add_module('dense_'+str(i),nn.Linear(mlp_hd,mlp_hd))
+				self.classifier.add_module('dropout_'+str(i),nn.Dropout(p=dr,inplace=True))
+				#self.classifier.add_module('dense_'+str(i)+'_act',nn.ReLU())
 
 			self.classifier.add_module('classifier_',nn.Linear(mlp_hd,4))
+			#self.classifier.add_module('classifier_',)
+
+
 
 	def forward(self,x):
+		#print(self.fe)
 		x = self.fe(x)
+		#print('output_of fe')
+		#print(x.size())
+		#x = self.avgpool(x)
+		#print(x.size())
 		x = x.view(x.size(0),-1)
+		#print('output_of fe2')
+		#print(x.size())
 		x = self.classifier(x)
+		#print('output')
+		#print(x.size())
 		return x
 
 
