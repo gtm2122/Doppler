@@ -249,51 +249,29 @@ def corr_overlap(coords_list):
 			#print(j)
 			
 			if(is_overlap(int1[0],int2[0]) and is_overlap(int1[1],int2[1])):
-				# print('overlap')
-				# print(int1)
-				# print(int2)
-				# print('overlap')
-				# print(int1[0][0]-int2[0][1])
-				# print(int2[0][0]-int1[0][1])
-				# print(int1[0][1]-int1[0][0])
+				
 
 				if (-int1[0][0]+int2[0][1] > 0.4*(int1[0][1]-int1[0][0]) or -int2[0][0]+int1[0][1] > 0.4*(int1[0][1]-int1[0][0]) ) :
-					#print('overlap2')
 					
-					#print(dic[i])
-					# print(i)
-					# print(int1)
-					# print(j)
-					# print(int2)
-
 					if(int2[1][1]>=int1[1][0] and int2[1][0] <= int1[1][0]):#and int2[1][0]<= int1[1][0]):
-						# print(int1)
-						# print(int2)
-
-						# print('100')
-						# print(dic[i])
-						# print(dic[j])
-						dic[i][0,1] = dic[j][1,1]
-						dic[i][-1,1] = dic[j][1,1]
-					elif(int2[1][0]>=int1[1][0] and int2[1][1]>= int2[1][1]):
-						# print('200')
-						# print(int1)
-						# print(int2)
-						dic[i][1,1] = dic[j][0,1]
-						dic[i][2,1] = dic[j][0,1]
-					elif(int2[1][0]>=int1[1][0] and int2[1][1]<= int2[1][1]):
-						# print('300')
-						# print(int1)
-						# print(int2)
 						
 						dic[i][0,1] = dic[j][1,1]
 						dic[i][-1,1] = dic[j][1,1]
-							
-				#print(is_overlap(int1[1],int2[1]))
-					#print(dic[i])
-				
-				#break
-		#break
+					elif(int2[1][0]>=int1[1][0] and int2[1][1]>= int2[1][1]):
+						
+						dic[i][1,1] = dic[j][0,1]
+						dic[i][2,1] = dic[j][0,1]
+
+					elif(int2[1][0]>=int1[1][0] and int2[1][1]<= int1[1][1]):
+						if(int2[1][0]-int1[1][0] > int1[1][1]-int2[1][1]):
+						
+							dic[i][1,1] = dic[j][0,1]
+							dic[i][2,1] = dic[j][0,1]
+						else:
+							dic[i][0,1] = dic[j][1,1]
+							dic[i][-1,1] = dic[j][1,1]
+												
+						
 	coords_list_new = [dic['W'],dic['E'],dic['T'],dic['C'],dic['V']]
 
 	return coords_list_new
