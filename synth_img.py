@@ -16,7 +16,6 @@ used_list = '/data/gabriel/Doppler/used_names_types.pkl'
 
 view_coord = np.array([0,216],dtype=np.float64)
 
-def corr_overlap():
 
 def return_rng_params(lab_type,img_path,gt_path,used_files_pkl,inp_img):
 	### returns the template image inpainted with either of the label types  
@@ -131,7 +130,7 @@ def return_rng_params(lab_type,img_path,gt_path,used_files_pkl,inp_img):
 		while(True):
 			vertical_adj = random.randint(0,inp_img.shape[0])
 			
-			if (max(new_coords[:,0]-vertical_adj + inp_img.shape[0])>220 and max(new_coords[:,0]-vertical_adj + inp_img.shape[0]) < inp_img.shape[0]):
+			if (np.max(new_coords[:,0]-vertical_adj + inp_img.shape[0])>250 and np.max(new_coords[:,0]-vertical_adj + inp_img.shape[0]) < inp_img.shape[0]):
 				#break
 				new_coords[:,0]= new_coords[:,0] - vertical_adj +inp_img.shape[0]-1
 				break
@@ -147,12 +146,19 @@ def return_rng_params(lab_type,img_path,gt_path,used_files_pkl,inp_img):
 		#plt.imshow(inp_img),plt.show()
 
 		#return inp_img
+		#print(new_coords[:,0].min())
+		#print(new_coords[:,1].min())
+		#print(new_coords[:,0].max())
+		#print(new_coords[:,1].max())
+		#exit()
 		new_coords = [new_coords[:,0].min(),new_coords[:,1].min(),new_coords[:,0].max()-new_coords[:,0].min(),new_coords[:,1].max()-new_coords[:,1].min()]
+		#print(new_coords)
 	elif lab_type == 'T':
 		
 		roi_rz = scipy.misc.imresize(roi_rz,(int(res_r*roi.shape[0]),int(res_c*roi.shape[1]))) 
 
 		pos_place = [[0,0],[0,inp_img.shape[1] - roi_rz.shape[1]],[inp_img.shape[0] - roi_rz.shape[0],inp_img.shape[1] - roi_rz.shape[1]],[inp_img.shape[0] - roi_rz.shape[0],0]]
+		#pos_place =[[inp_img.shape[0] - roi_rz.shape[0],inp_img.shape[1] - roi_rz.shape[1]]]
 		random.shuffle(pos_place)
 		new_coords = pos_place[0]
 		#plt.imshow(roi_rz),plt.show()
@@ -170,7 +176,7 @@ def return_rng_params(lab_type,img_path,gt_path,used_files_pkl,inp_img):
 
 	elif lab_type == 'V':
 		roi_rz = scipy.misc.imresize(roi_rz,(int(res_r*roi.shape[0]),int(res_c*roi.shape[1]))) 
-
+		#print('roi = ',roi_rz.shape)
 		pos_row = random.randint(0,5)
 		pos_col = random.randint(100,inp_img.shape[1]-roi_rz.shape[1]-100)
 		inp_img[pos_row:pos_row+int(roi_rz.shape[0]),pos_col:pos_col+int(roi_rz.shape[1])] = roi_rz
@@ -190,7 +196,17 @@ def return_rng_params(lab_type,img_path,gt_path,used_files_pkl,inp_img):
 		inp_img[pos_row:pos_row+int(roi_rz.shape[0]),pos_col[0]:pos_col[0]+int(roi_rz.shape[1])] = roi_rz
 		new_coords = [pos_row,pos_col[0],int(roi_rz.shape[0]),int(roi_rz.shape[1])]
 
-	return inp_img,new_coords
+	new_coords2 = np.zeros((4,2))
+	new_coords2[0,0] = new_coords[0]
+	new_coords2[0,1] = new_coords[1]
+	new_coords2[1,0] = new_coords[0]
+	new_coords2[1,1] = new_coords[1]+new_coords[3]
+	new_coords2[2,0] = new_coords[0]+new_coords[2]
+	new_coords2[2,1] = new_coords2[1,1]
+	new_coords2[3,0] = new_coords2[2,0]
+	new_coords2[3,1] = new_coords2[0,1]
+	#print(new_coords2) 
+	return inp_img,new_coords2
 
 
 
@@ -206,29 +222,144 @@ def return_rng_params(lab_type,img_path,gt_path,used_files_pkl,inp_img):
 
 	#plt.imshow(true_img),plt.show()
 	#return inp_img
+def is_overlap(t1,t2):
+	#print(t1)
+	#print(t2)
+	if(t1[0]<=t2[1] and t1[1]>=t2[0]):
+		return True
+	return False
 
 
+def corr_overlap(coords_list):
 
-for count in range(0,5000):
+	dic = {'W':coords_list[0],'E':coords_list[1],'T':coords_list[2],'C':coords_list[3],'V':coords_list[4]}
+	#print(dic['E'])
+	
+	#for i in ['E']:
+	for i in ['W','E']:
+		for j in list(dic.keys())[2:]:
+			#print(list(dic.keys()))
+			int1 = [ [dic[i][0,0],dic[i][2,0]],
+						[dic[i][0,1],dic[i][1,1]] ]
+
+			
+			int2 = [[dic[j][0,0],dic[j][2,0]],
+					[dic[j][0,1],dic[j][1,1]] ]
+			#print(i)
+			#print(j)
+			
+			if(is_overlap(int1[0],int2[0]) and is_overlap(int1[1],int2[1])):
+				# print('overlap')
+				# print(int1)
+				# print(int2)
+				# print('overlap')
+				# print(int1[0][0]-int2[0][1])
+				# print(int2[0][0]-int1[0][1])
+				# print(int1[0][1]-int1[0][0])
+
+				if (-int1[0][0]+int2[0][1] > 0.4*(int1[0][1]-int1[0][0]) or -int2[0][0]+int1[0][1] > 0.4*(int1[0][1]-int1[0][0]) ) :
+					#print('overlap2')
+					
+					#print(dic[i])
+					# print(i)
+					# print(int1)
+					# print(j)
+					# print(int2)
+
+					if(int2[1][1]>=int1[1][0] and int2[1][0] <= int1[1][0]):#and int2[1][0]<= int1[1][0]):
+						# print(int1)
+						# print(int2)
+
+						# print('100')
+						# print(dic[i])
+						# print(dic[j])
+						dic[i][0,1] = dic[j][1,1]
+						dic[i][-1,1] = dic[j][1,1]
+					elif(int2[1][0]>=int1[1][0] and int2[1][1]>= int2[1][1]):
+						# print('200')
+						# print(int1)
+						# print(int2)
+						dic[i][1,1] = dic[j][0,1]
+						dic[i][2,1] = dic[j][0,1]
+					elif(int2[1][0]>=int1[1][0] and int2[1][1]<= int2[1][1]):
+						# print('300')
+						# print(int1)
+						# print(int2)
+						
+						dic[i][0,1] = dic[j][1,1]
+						dic[i][-1,1] = dic[j][1,1]
+							
+				#print(is_overlap(int1[1],int2[1]))
+					#print(dic[i])
+				
+				#break
+		#break
+	coords_list_new = [dic['W'],dic['E'],dic['T'],dic['C'],dic['V']]
+
+	return coords_list_new
+
+for count in range(0,10000):
 	try:
+		coord_list =[]
 		temp_img = np.zeros((700,700,3))
 		#print(count)
+		print(count)
 		for i in ['W','E','T','C','V']:
-
+		#for i in ['E']:
 			if not os.path.isdir('new_images/GT/'+i):
 				os.makedirs('new_images/GT/'+i)
 
 			temp_img,coords = return_rng_params(i,img_dir,gt_path,used_list,temp_img)
 			#print('sz')
+			#break
 			#print(i)
 			#print(coords)
-			gt_image = np.zeros_like(temp_img)
-			gt_image[coords[0]:coords[0]+coords[2],coords[1]:coords[1]+coords[3]]=255.0
-			scipy.misc.imsave('./new_images/GT/'+i+'/GT_'+str(count)+'.png',gt_image)
-			np.savetxt('./new_images/GT/'+i+'/GT_'+str(count)+'.npy',np.array([coords[0],coords[0]+coords[2],coords[1],coords[1]+coords[3]]))
+			coords = coords.astype(np.int64)
+			#if(i == 'E'):
+				# print('try')
+				# print(count)
+				# print(i)
+				# print(coords)
+				# print('try')
+			coord_list.append(coords)
+			#gt_image = np.zeros_like(temp_img)
+			#print(coords)
+			#gt_image[coords[0,0]:coords[2,0],coords[0,1]:coords[1,1]]=255
+
+			#scipy.misc.imsave('./new_images/GT/'+i+'/GT_'+str(count)+'.png',gt_image)
+			#np.savetxt('./new_images/GT/'+i+'/GT_'+str(count)+'.npy',np.array([coords[0],coords[0]+coords[2],coords[1],coords[1]+coords[3]]))
 			#print(temp_img.shape)
 			#print('sz')
+		
+		#print(coords)
+		# print('coord_list \n')
+		# print(coord_list)
+		# print('\n')
+		# print(count)
+		# print(coord_list[1])
+		coords_list_new = corr_overlap(coord_list)
 
+		p=0
+		#print(count)
+		for k in ['W','E','T','C','V']:
+		#for k in ['E']:
+			
+			np.savetxt('./new_images/GT/'+k+'/GT_'+str(count)+'.npy',coords_list_new[p])
+			gt_image = np.zeros((700,700))
+			#print(coords)
+			coords = coords_list_new[p]
+			#print(coords)
+			#print(coords)
+			#print(k)
+			gt_image[coords[0,0]:coords[2,0],coords[0,1]:coords[1,1]]=255
+			scipy.misc.imsave('./new_images/GT/'+k+'/GT_'+str(count)+'.png',gt_image)
+			p+=1
+		#print(coord_list)
+
+		#corr_overlap()
+		#plt.close()
+		#plt.imshow(gt_image),plt.show()
+		#break
 		#plt.imshow(temp_img),plt.show()
 		scipy.misc.imsave('./new_images/images/synth_img_'+str(count)+'.png',temp_img)
 	
