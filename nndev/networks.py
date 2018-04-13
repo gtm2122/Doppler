@@ -6,21 +6,26 @@ import matplotlib.pyplot as plt
 import os
 
 class dop_bbox(nn.Module):
-	def __init__(self,fe_obj,mlp_l,mlp_hd,dr):
+	def __init__(self,fe_obj,mlp_l,mlp_hd,dr,model_dir=None):
 		super(dop_bbox,self).__init__()
 
 		self.fe = nn.Sequential()
 		count=0
-		for j,i in fe_obj.named_children():
-			
-			#print(i)
-			if isinstance(i,nn.Linear):
+		if(model_dir == None):
+			for j,i in fe_obj.named_children():
 				
-				self.embed_sz = i.in_features
-				break
-			self.fe.add_module('fe_'+str(count),i)
-			count+=1
+				#print(i)
+				if isinstance(i,nn.Linear):
+					
+					self.embed_sz = i.in_features
+					break
+				self.fe.add_module('fe_'+str(count),i)
+				count+=1
+		else:
+
+			self.fe = torch.load(model_dir)
 		self.classifier = nn.Sequential()
+		self.avgpool = nn.AdaptiveAvgPool2d(1)
 		#self.avgpool = nn.AvgPool2d(7,stride=1)
 		if(mlp_l==1):
 			self.classifier.add_module('dense_0',nn.Linear(self.embed_sz,4))
@@ -36,6 +41,8 @@ class dop_bbox(nn.Module):
 				#self.classifier.add_module('dense_'+str(i)+'_act',nn.ReLU())
 
 			self.classifier.add_module('classifier_',nn.Linear(mlp_hd,4))
+			
+
 			#self.classifier.add_module('classifier_',)
 
 
@@ -43,6 +50,9 @@ class dop_bbox(nn.Module):
 	def forward(self,x):
 		#print(self.fe)
 		x = self.fe(x)
+
+		if('densenet' in self.model_dir):
+			x = self.avgpool(x)
 		#print('output_of fe')
 		#print(x.size())
 		#x = self.avgpool(x)
