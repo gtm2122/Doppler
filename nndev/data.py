@@ -12,23 +12,42 @@ import random
 import pickle
 import matplotlib.patches as patches
 from PIL import Image
-def load_data(data_dir,label_dir,batch_size,name_list_dir,label_type,save_dir,model_name,ow=True):
+def load_data(data_dir,label_dir,batch_size,label_type,save_dir,model_name,norm_bool,data_name,ow=True,name_list_dir=None,gray=False):
 	### TODO , wait for the data to be selected and then write this function
 	# yield image_batch,label_batch (probably corner x, corner y, length, breadth)
 
 	#zoom=str(zoom)
-
-	if not os.path.isdir(save_dir) or ow:
-
-		name_list = pickle.load(open(name_list_dir,'rb'))[label_type]
-
-		label_end = '_1_2_Doppler_03282018_1.0.npy'
-
+	print(data_name)
+	if not os.path.isfile(save_dir+'/'+data_name+'val.pth') or ow:
+		print('making files '+data_name+'for model '+model_name)
+		if name_list_dir != None:
+			name_list = pickle.load(open(name_list_dir,'rb'))[label_type]
+			label_end = '_1_2_Doppler_03282018_1.0.npy'
+		
+		else:
+			name_list = os.listdir(data_dir)
+			name_list = [i.replace('.png','') for i in name_list]
+			label_end='.npy'
+		#print(name_list[:10])
 		img_tensor_list = []
 		label_tensor_list = []
 		size_tensor_list = []
-		data_tf = transforms.Compose([transforms.Resize((224,224)),transforms.ToTensor(),transforms.Normalize([0.485,0.456,0.406],[0.229,0.224,0.225])])
-
+		if norm_bool:
+			if not gray:
+				print('not gray')
+				data_tf = transforms.Compose([transforms.Resize((224,224)),transforms.ToTensor(),transforms.Normalize([0.485,0.456,0.406],[0.229,0.224,0.225])])
+			else:
+				print('gray transformation applied')
+				data_tf = transforms.Compose([transforms.Resize((224,224)),transforms.Grayscale(),transforms.ToTensor(),
+				transforms.Lambda(lambda x: torch.cat([x,x,x],0)),transforms.Normalize([0.5,0.5,0.5],[0.5,0.5,0.5])])
+		
+		else:
+			if gray:
+				data_tf = transforms.Compose([transforms.Resize((224,224)),tranforms.Grayscale(),transforms.ToTensor(),
+				transforms.Lambda(lambda x: torch.cat([x,x,x],0))])
+			else:
+				data_tf = transforms.Compose([transforms.Resize((224,224)),transforms.ToTensor()])
+					
 
 		count = 0
 
@@ -37,11 +56,15 @@ def load_data(data_dir,label_dir,batch_size,name_list_dir,label_type,save_dir,mo
 		for i in os.listdir(data_dir):
 
 
-			name_img = i[:i.find('.jpeg')]
+			name_img = i[:i.find('.png')]
+			#print(name_img)
+			#print(name_list)
+			#print(name_img)
 			if name_img in name_list:
 				label_name = name_img+label_end
-				img_name = name_img+'.jpeg'
-
+				#print(label_end)
+				img_name = name_img+'.png'
+				#print('here')
 				np_img = plt.imread(data_dir+'/'+img_name)
 				the_img = Image.open(data_dir+'/'+img_name)
 
@@ -50,6 +73,7 @@ def load_data(data_dir,label_dir,batch_size,name_list_dir,label_type,save_dir,mo
 				cols,rows= the_img.size # Image_obj.size returns as cols x rows
 
 				label_tf = np.array([label[0,0],label[0,1],np.abs(label[2,0]-label[0,0]),np.abs(label[2,1]-label[0,1]),rows,cols]).reshape(1,6).astype(np.float32)
+				#print(label_tf)
 				##### NOTE - Ground Truth arranged as ROW INDEX, COLUMN INDEX , ROW_LENGTH, COLUMN_LENGTH , TOTAL_ROWS, TOTAL_COLS
 				# print(label[0,0])
 				# print(label[0,1])
@@ -88,25 +112,28 @@ def load_data(data_dir,label_dir,batch_size,name_list_dir,label_type,save_dir,mo
 		test_data = data_utils.DataLoader(data_utils.TensorDataset(img_tensor_list[test_idx,:,:],label_tensor_list[test_idx,:].float()),batch_size=batch_size,shuffle=True)
 		val_data = data_utils.DataLoader(data_utils.TensorDataset(img_tensor_list[val_idx,:,:],label_tensor_list[val_idx,:].float()),batch_size=batch_size,shuffle=True)
 
-		torch.save(train_data,save_dir+'/'+model_name+'train.pth')
-		torch.save(test_data,save_dir+'/'+model_name+'test.pth')
-		torch.save(val_data,save_dir+'/'+model_name+'val.pth')
+		torch.save(train_data,save_dir+'/'+data_name+'train.pth')
+		torch.save(test_data,save_dir+'/'+data_name+'test.pth')
+		torch.save(val_data,save_dir+'/'+data_name+'val.pth')
 
 	else:
-		train_data = torch.load(save_dir+'/'+model_name+'train.pth')
-		test_data = torch.load(save_dir+'/'+model_name+'test.pth')
-		val_data = torch.load(save_dir+'/'+model_name+'val.pth')
+		print('loading existing files for '+model_name)
+		print('data_name = ',data_name)
+		train_data = torch.load(save_dir+'/'+data_name+'train.pth')
+		test_data = torch.load(save_dir+'/'+data_name+'test.pth')
+		val_data = torch.load(save_dir+'/'+data_name+'val.pth')
 
 	return {'train':train_data,'test':test_data,'val':val_data}
 
 from torch.autograd import Variable
 import scipy.misc
 import os
-def train(model,epochs,batch_size,data_dir,label_dir,lr,steps,lr_mult,label_type,name_list_dir,save_dir,model_name='model_100hd_1l'):
+def train(model,epochs,batch_size,data_dir,label_dir,lr,steps,lr_mult,label_type,save_dir,norm_bool,data_name,model_name='model_100hd_1l',name_list_dir=None,gray=False):
 	### data_dir = /bla/bla/bla/containing_train_and_test_folders
 	if not os.path.isdir('./results/'+model_name):
 		os.makedirs('./results/'+model_name)
-	data_loaders = load_data(data_dir = data_dir,label_dir=label_dir,batch_size=batch_size,name_list_dir=name_list_dir,label_type=label_type,save_dir=save_dir,model_name=model_name)
+	data_loaders = load_data(data_dir = data_dir,label_dir=label_dir,batch_size=batch_size,name_list_dir=name_list_dir,
+		label_type=label_type,save_dir=save_dir,model_name=model_name,norm_bool=norm_bool,ow=False,data_name=data_name,gray=gray)
 
 	criterion = nn.MSELoss()
 	opt = torch.optim.SGD(model.parameters(),lr=lr )
@@ -173,10 +200,10 @@ def train(model,epochs,batch_size,data_dir,label_dir,lr,steps,lr_mult,label_type
 		plt.close()
 
 	return model
-
-def test(model,save_dir,model_name):
+import scipy.misc
+def test(model,save_dir,data_name,model_name):
 	
-	test_load = torch.load(save_dir+'/'+model_name+'test.pth')
+	test_load = torch.load(save_dir+'/'+data_name+'test.pth')
 	model.train(False)
 	model=model.cuda()
 	count=0
@@ -198,7 +225,7 @@ def test(model,save_dir,model_name):
 
 						
 
-			img_np = scipy.misc.imresize(img_np,(sz[i,:2][0],sz[i,:2][1])).astype(np.int8)
+			img_np = scipy.misc.imresize(img_np,(sz[i,:2][0],sz[i,:2][1]))
 
 			fig,ax = plt.subplots(1)
 			ax.imshow(img_np)
@@ -218,7 +245,7 @@ def test(model,save_dir,model_name):
 			#print(l,b)
 
 			rect_output= patches.Rectangle(corner,l_output,b_output,linewidth=2,edgecolor='r',facecolor='none')
-			rect_actual= patches.Rectangle(corner,l,b,linewidth=2,edgecolor='g',facecolor='none')
+			rect_actual= patches.Rectangle(corner,l,b,linewidth=4,edgecolor='g',facecolor='none')
 			#count+=1
 			ax.add_patch(rect_output)
 			ax.add_patch(rect_actual)
