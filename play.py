@@ -81,7 +81,7 @@ model = pickle.load(open('./model.pkl','rb'))
 #list_img = [i for i in os.listdir('/data/Gurpreet/Doppler_Sample_Images/') if '.jpeg' in i and '0M7CV8VT.11.jpeg' in i or '0M7AQA0P.19.jpeg' in i]
 
 list_img = [i for i in os.listdir('/data/DATASETS/WORKABLE/Dicom_Samples/Set2/70_Images/') if '.jpeg' in i ]
-
+#list_img = ['/data/DATASETS/WORKABLE/Dicom_Samples/Set2/Gurpreet_Experiments/4750.18091_0KXU5310_I64/1_2_Doppler_21032018/Oimg.bmp']
 
 
 import scipy.fftpack
@@ -91,7 +91,9 @@ from scipy.misc import imsave
 count=0
 import time
 
-path_of_img = '/data/DATASETS/WORKABLE/Dicom_Samples/Set2/70_Images/'
+#path_of_img = '/data/DATASETS/WORKABLE/Dicom_Samples/Set2/70_Images/'
+path_of_img = '/data/DATASETS/WORKABLE/Dicom_Samples/Set2/Cluster_1/'
+list_img = [i for i in os.listdir(path_of_img) if '.jpeg' in i]
 #img = cv2.imread(path_of_img+'/'+list_img[0])
 #labels = model.predict(img.reshape(img.shape[0]*img.shape[1],3))
 
@@ -111,7 +113,9 @@ for name_img in list_img:
 	#name_img = '0KXV5LXD.52.jpeg'
 	print(name_img)
 	img = cv2.imread(path_of_img+name_img)
-	#plt.imshow(img),plt.show()
+	#img = cv2.imread(name_img)
+	#print(path_of_img+name_img)
+	plt.imshow(img),plt.show()
 	img_real_gray = 0.2989*img[:,:,2] + 0.597*img[:,:,1] + 0.114*img[:,:,0]
 	imgG = img[:,:,1]
 
@@ -125,7 +129,7 @@ for name_img in list_img:
 	labels2[np.where(labels==2)] = 1.0
 
 	labels2 = labels2.reshape(img.shape[0],img.shape[1])
-	#plt.imshow(labels2),plt.show()
+	plt.imshow(labels2),plt.show()
 	img_filt_r = np.zeros_like(img)
 
 	img_filt_r[:,:,0] = labels2*img[:,:,0] #+ labels2*img[:,:,1] + labels2*img[:,:,2] 
@@ -136,7 +140,7 @@ for name_img in list_img:
 
 
 
-	#plt.imshow(img_filt_r),plt.show()
+	plt.imshow(img_filt_r),plt.show()
 
 	img_gray = 0.2989*img_filt_r[:,:,2] + 0.5870*img_filt_r[:,:,1] + 0.1140*img_filt_r[:,:,0]
 	#img_gray = cv2.GaussianBlur(img_gray,(7,7),0)
@@ -145,7 +149,7 @@ for name_img in list_img:
 
 	#img_gray = cv2.dilate(img_gray,None,1)
 
-	#plt.imshow(img_gray),plt.show()	
+	plt.imshow(img_gray),plt.show()	
 	img_gray_new = img_gray
 	img_gray_new[img_gray>145] = 0
 
@@ -166,7 +170,7 @@ for name_img in list_img:
 	gray_im = img_gray_new2>thresh
 	gray_im = np.array(gray_im,dtype=np.uint8)
 	
-	#plt.imshow(gray_im),plt.show()
+	plt.imshow(gray_im),plt.show()
 
 	output = cv2.connectedComponentsWithStats(gray_im,connectivity=4)
 
@@ -229,24 +233,24 @@ for name_img in list_img:
 
 
 
-	#plt.subplot(211)
-	#plt.imshow(img)
-	#plt.subplot(212)
-	#plt.imshow(img_seg)
+	plt.subplot(211)
+	plt.imshow(img)
+	plt.subplot(212)
+	plt.imshow(img_seg)
 	
 	ecg_part_temp = np.zeros_like(img_gray.shape)
 	
 	#ecg_part_temp = np.zeros_like(img)
 
-	#plt.imshow(img_seg),plt.show()
-	print(img.shape)
+	plt.imshow(img_seg),plt.show()
+	#print(img.shape)
 	ecg_part_temp = img[:,:,0]*img_seg
 	
 	#ecg_part_temp[:,:,0] = img[:,:,0]*img_seg
 	#ecg_part_temp[:,:,1] = img[:,:,1]*img_seg
 	#ecg_part_temp[:,:,2] = img[:,:,2]*img_seg
 
-	#plt.imshow(ecg_part_temp),plt.show()
+	plt.imshow(ecg_part_temp),plt.show()
 	#continue
 	#print(threshold_otsu(ecg_part_temp))
 	plt.imshow(ecg_part_temp),plt.show()
@@ -296,18 +300,18 @@ for name_img in list_img:
 	plt.subplot(211)
 	plt.plot(relative_values)
 	plt.subplot(212)
-	plt.plot(y2),plt.show()
+	plt.plot(y2)#,plt.show()
 
-	#plt.savefig('./ECG_part/fiter_signal_new_'+str(name_img)+'.png')
+	plt.savefig('./ECG_part/fiter_signal_new_'+str(name_img)+'.png')
 	
 	plt.close()
 	thresh2[thresh2>0] = 255
 	
-	plt.imshow(thresh2),plt.show()
-	plt.plot(y2),plt.show()
-	plt.close()
-	#imsave('./ECG_part/fiter_signal_new_'+str(name_img)+'_ECG_SEG.png',thresh2)
-	#np.savetxt('./ECG_part/fiter_signal_new_'+str(name_img)+'_coords.npy',sorted_coords)
+	#plt.imshow(thresh2),plt.show()
+	#plt.plot(y2),plt.show()
+	#plt.close()
+	imsave('./ECG_part/fiter_signal_new_'+str(name_img)+'_ECG_SEG.png',thresh2)
+	np.savetxt('./ECG_part/fiter_signal_new_'+str(name_img)+'_coords.npy',sorted_coords)
 	
 	
 

@@ -30,9 +30,10 @@ import os
 from PIL import Image
 import matplotlib.patches as patches
 
-gt_path = '/data/gabriel/ground_truths/'
+gt_path = '/data/DATASETS/WORKABLE/Dicom_Samples/Set2/Gurpreet_Experiments/ground_truths/'
 
 bbox_types = ['W','E','V','C','T','S']
+#bbox_types = ['W','V','T']
 
 c_to_num = {'b':0,'r':1,'g':2,'y':3,'m':4}
 
@@ -163,9 +164,9 @@ for names in a[0]:
 						#print(b_box_coord)
 						mask_type[int(b_box_coord[0,0]):int(b_box_coord[2,0]),int(b_box_coord[0,1]):int(b_box_coord[1,1])] = 255
 
-						# scipy.misc.imsave(gt_type_path,mask_type)
+						scipy.misc.imsave(gt_type_path,mask_type)
 
-						# np.savetxt(gt_zoom_path+'/'+names+'_'+i+'.npy',b_box_coord)
+						np.savetxt(gt_zoom_path+'/'+names+'_'+i+'.npy',b_box_coord)
 
 						all_coords_types.append(b_box_coord)
 
@@ -180,27 +181,27 @@ for names in a[0]:
 				#all_coords_types=[]
 				#print(all_coords_types)
 				#count = 66
-				# fig,ax = plt.subplots(1)
-				# im = np.array(Image.open(orig_dir+'/'+names+'.jpeg'),dtype=np.uint8)
-				# ax.imshow(im)
+				fig,ax = plt.subplots(1)
+				im = np.array(Image.open(orig_dir+'/'+names+'.jpeg'),dtype=np.uint8)
+				ax.imshow(im)
 
-				# for coord_type in all_coords_types:
-				# 	corner = (coord_type[0,1],coord_type[0,0])
-				# 	b = float(coord_type[3,0])-float(coord_type[0,0])
-				# 	l = float(coord_type[2,1])-float(coord_type[3,1])
-				# 	print(l,b)
+				for coord_type in all_coords_types:
+					corner = (coord_type[0,1],coord_type[0,0])
+					b = float(coord_type[3,0])-float(coord_type[0,0])
+					l = float(coord_type[2,1])-float(coord_type[3,1])
+					#print(l,b)
 
 					
 					
-				# 	rect = patches.Rectangle(corner,l,b,linewidth=2,edgecolor='r',facecolor='none')
-				# 	#count+=1
-				# 	ax.add_patch(rect)
-				# #plt.plot()
-				# #plt.show()
+					rect = patches.Rectangle(corner,l,b,linewidth=2,edgecolor='r',facecolor='none')
+					#count+=1
+					ax.add_patch(rect)
+				#plt.plot()
+				#plt.show()
 
-				# plt.savefig(gt_path+'/combined/'+names+'_'+i+'.png')
-				# #fig.close()
-				# plt.close()
+				plt.savefig(gt_path+'/combined/'+names+'_'+i+'.png')
+				#fig.close()
+				plt.close()
 
 		except IndexError:
 			with open('./error_names.txt','a') as f:
@@ -239,6 +240,9 @@ for i in all_names:
 
 
 pickle.dump(not_used,open('./not_used_types.pkl','wb'))
+
+
+
 
 
 # b = np.array(a)
